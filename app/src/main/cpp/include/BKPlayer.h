@@ -23,9 +23,8 @@ private:
     JNICallbakcHelper *helper = 0;
     bool isPlaying; // 是否播放
     RenderCallback renderCallback;
-    int duration; // TODO 第七节课增加 总时长
-
-    pthread_mutex_t seek_mutex; // TODO 第七节课增加 3.1
+    // int duration;
+    // pthread_mutex_t seek_mutex;
     pthread_t pid_stop;
 
 public:
@@ -40,9 +39,8 @@ public:
 
     void setRenderCallback(RenderCallback renderCallback);
 
-    int getDuration();
-
-    void seek(int play_value);
+    // int getDuration();
+    // void seek(int play_value);
 
     void stop();
 

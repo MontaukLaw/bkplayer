@@ -66,7 +66,7 @@ void renderFrame(uint8_t *src_data, int width, int height, int src_linesize) {
 
 extern "C"
 JNIEXPORT jlong JNICALL
-Java_com_wulala_bkplayer_BKPlayer_prepareNative(JNIEnv *env, jobject job, jstring data_source) {
+Java_com_wulala_bkplayer_BKJavaPlayer_prepareNative(JNIEnv *env, jobject job, jstring data_source) {
     const char *data_source_ = env->GetStringUTFChars(data_source, nullptr);
     auto *helper = new JNICallbakcHelper(vm, env, job); // C++子线程回调 ， C++主线程回调
     auto *player = new BKPlayer(data_source_, helper); // 有意为之的，开辟堆空间，不能释放
@@ -76,9 +76,11 @@ Java_com_wulala_bkplayer_BKPlayer_prepareNative(JNIEnv *env, jobject job, jstrin
     return reinterpret_cast<jlong>(player);
 }
 
+
+
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_wulala_bkplayer_BKPlayer_startNative(JNIEnv *env, jobject thiz, jlong nativeObj) {
+Java_com_wulala_bkplayer_BKJavaPlayer_startNative(JNIEnv *env, jobject thiz, jlong nativeObj) {
     auto *player = reinterpret_cast<BKPlayer *>(nativeObj);
     if (player) {
         player->start();
@@ -89,7 +91,7 @@ Java_com_wulala_bkplayer_BKPlayer_startNative(JNIEnv *env, jobject thiz, jlong n
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_wulala_bkplayer_BKPlayer_stopNative(JNIEnv *env, jobject thiz, jlong nativeObj) {
+Java_com_wulala_bkplayer_BKJavaPlayer_stopNative(JNIEnv *env, jobject thiz, jlong nativeObj) {
     auto *player = reinterpret_cast<BKPlayer *>(nativeObj);
     if (player) {
         player->stop();
@@ -98,7 +100,7 @@ Java_com_wulala_bkplayer_BKPlayer_stopNative(JNIEnv *env, jobject thiz, jlong na
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_wulala_bkplayer_BKPlayer_releaseNative(JNIEnv *env, jobject thiz, jlong nativeObj) {
+Java_com_wulala_bkplayer_BKJavaPlayer_releaseNative(JNIEnv *env, jobject thiz, jlong nativeObj) {
     auto *player = reinterpret_cast<BKPlayer *>(nativeObj);
 
     pthread_mutex_lock(&mutex);
@@ -121,9 +123,8 @@ Java_com_wulala_bkplayer_BKPlayer_releaseNative(JNIEnv *env, jobject thiz, jlong
 // 实例化出 window
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_wulala_bkplayer_BKPlayer_setSurfaceNative(JNIEnv *env, jobject thiz, jobject surface, jlong nativeObj) {
+Java_com_wulala_bkplayer_BKJavaPlayer_setSurfaceNative(JNIEnv *env, jobject thiz, jobject surface, jlong nativeObj) {
     auto *player = reinterpret_cast<BKPlayer *>(nativeObj);
-
     pthread_mutex_lock(&mutex);
 
     // 先释放之前的显示窗口
@@ -136,24 +137,4 @@ Java_com_wulala_bkplayer_BKPlayer_setSurfaceNative(JNIEnv *env, jobject thiz, jo
     window = ANativeWindow_fromSurface(env, surface);
 
     pthread_mutex_unlock(&mutex);
-}
-
-// TODO 第七节课增加 获取总时长
-extern "C"
-JNIEXPORT jint JNICALL
-Java_com_wulala_bkplayer_BKPlayer_getDurationNative(JNIEnv *env, jobject thiz, jlong nativeObj) {
-    auto *player = reinterpret_cast<BKPlayer *>(nativeObj);
-    if (player) {
-        return player->getDuration();
-    }
-    return 0;
-}
-
-extern "C"
-JNIEXPORT void JNICALL
-Java_com_wulala_bkplayer_BKPlayer_seekNative(JNIEnv *env, jobject thiz, jint play_value, jlong nativeObj) {
-    auto *player = reinterpret_cast<BKPlayer *>(nativeObj);
-    if (player) {
-        player->seek(play_value);
-    }
 }

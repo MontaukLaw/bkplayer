@@ -11,7 +11,7 @@ JNICallbakcHelper::JNICallbakcHelper(JavaVM *vm, JNIEnv *env, jobject job) {
     jmd_onError = env->GetMethodID(bkPlayerKTClass, "onError", "(ILjava/lang/String;)V");
 
     // 播放音频的时间搓回调
-    jmd_onProgress = env->GetMethodID(bkPlayerKTClass, "onProgress", "(I)V");
+    // jmd_onProgress = env->GetMethodID(bkPlayerKTClass, "onProgress", "(I)V");
 }
 
 JNICallbakcHelper::~JNICallbakcHelper() {
@@ -53,13 +53,13 @@ void JNICallbakcHelper::onError(int thread_mode, int error_code, char * ffmpegEr
 void JNICallbakcHelper::onProgress(int thread_mode, int audio_time) {
     if (thread_mode == THREAD_MAIN) {
         //主线程
-        env->CallVoidMethod(job, jmd_onProgress, audio_time);
+        // env->CallVoidMethod(job, jmd_onProgress, audio_time);
     } else {
         //子线程
         //当前子线程的 JNIEnv
         JNIEnv *env_child;
         vm->AttachCurrentThread(&env_child, nullptr);
-        env_child->CallVoidMethod(job, jmd_onProgress, audio_time);
+        // env_child->CallVoidMethod(job, jmd_onProgress, audio_time);
         vm->DetachCurrentThread();
     }
 }

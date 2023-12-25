@@ -50,6 +50,9 @@ void VideoChannel::stop() {
 
     packets.clear();
     frames.clear();
+
+    packets.clear();
+    frames.clear();
 }
 
 void *task_video_decode(void *args) {
@@ -79,7 +82,7 @@ void VideoChannel::video_decode() {
         if (!ret) { // ret == 0
             continue; // 哪怕是没有成功，也要继续（假设：你生产太慢(压缩包加入队列)，我消费就等一下你）
         }
-        LOGD("1. 取出一个压缩包，准备解码");
+        // LOGD("1. 取出一个压缩包，准备解码");
         ret = avcodec_send_packet(codecContext, pkt); // 第一步：把我们的 压缩包 AVPack发送给 FFmpeg缓存区
 
         // FFmpeg源码内部 缓存了一份pkt副本，所以我才敢大胆的释放
@@ -89,7 +92,7 @@ void VideoChannel::video_decode() {
             break; // avcodec_send_packet 出现了错误，结束循环
         }
 
-        LOGD("2. 解码一个压缩包，准备播放")
+        // LOGD("2. 解码一个压缩包，准备播放")
         // 第二步：读取 FFmpeg缓存区 A里面的 原始包 ，有可能读不到，为什么？ 内部缓冲区 会 运作过程比较慢
         AVFrame *frame = av_frame_alloc();
         ret = avcodec_receive_frame(codecContext, frame);
@@ -108,7 +111,7 @@ void VideoChannel::video_decode() {
         if (counter == 2) {
             // 终于拿到 原始包了，加入队列-- YUV数据
             frames.insertToQueue(frame);
-            LOGD("3. 解码一个压缩包，成功加入队列")
+            // LOGD("3. 解码一个压缩包，成功加入队列")
             counter = 0;
         } else {
             releaseAVFrame(&frame);
@@ -196,7 +199,7 @@ void VideoChannel::video_play() { // 第二线线程：视频：从队列取出�
             continue; // 哪怕是没有成功，也要继续（假设：你生产太慢(原始包加入队列)，我消费就等一下你）
         }
 
-        LOGD("4. 从队列中取出一个YUV原始包，准备播放")
+        // LOGD("4. 从队列中取出一个YUV原始包，准备播放")
         // 格式转换 yuv ---> rgba
         sws_scale(sws_ctx,
                 // 下面是输入环节 YUV的数据

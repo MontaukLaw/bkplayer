@@ -14,10 +14,12 @@ BKPlayer::BKPlayer(const char *data_source, JNICallbakcHelper *helper) {
 
     this->helper = helper;
 
-    pthread_mutex_init(&seek_mutex, nullptr);
+    // pthread_mutex_init(&seek_mutex, nullptr);
 }
 
+// 这个object
 BKPlayer::~BKPlayer() {
+
     if (data_source) {
         delete data_source;
         data_source = nullptr;
@@ -28,7 +30,7 @@ BKPlayer::~BKPlayer() {
         helper = nullptr;
     }
 
-    pthread_mutex_destroy(&seek_mutex);
+    // pthread_mutex_destroy(&seek_mutex);
 }
 
 // void* (*__start_routine)(void*)  子线程了
@@ -89,7 +91,7 @@ void BKPlayer::prepare_() { // 属于 子线程了 并且 拥有  DerryPlayer的
     // 你在 xxx.mp4 能够拿到
     // 你在 xxx.flv 都能拿到
     // avformat_find_stream_info FFmpeg内部源码已经做（流探索）了，所以可以拿到 总时长
-    this->duration = formatContext->duration / AV_TIME_BASE; // FFmpeg的单位 基本上都是  有理数(时间基)，所以你需要这样转
+    // this->duration = formatContext->duration / AV_TIME_BASE; // FFmpeg的单位 基本上都是  有理数(时间基)，所以你需要这样转
 
     AVCodecContext *codecContext = nullptr;
 
@@ -153,10 +155,7 @@ void BKPlayer::prepare_() { // 属于 子线程了 并且 拥有  DerryPlayer的
             // 是视频
             video_channel = new VideoChannel(stream_index, codecContext, time_base, fps);
             video_channel->setRenderCallback(renderCallback);
-
-            if (this->duration != 0) { // 非直播，才有意义把 JNICallbackHelper传递过去
-                video_channel->setJNICallbakcHelper(helper);
-            }
+            video_channel->setJNICallbakcHelper(helper);
         }
     } // for end
 
@@ -265,6 +264,9 @@ void BKPlayer::setRenderCallback(RenderCallback renderCallback) {
     this->renderCallback = renderCallback;
 }
 
+
+#if 0
+
 int BKPlayer::getDuration() {
     return duration; // 在调用此函数之前，必须给此duration变量赋值
 }
@@ -313,9 +315,10 @@ void BKPlayer::seek(int progress) {
         video_channel->frames.setWork(1);  // 队列继续工作
     }
 
-    pthread_mutex_unlock(&seek_mutex);
+    // pthread_mutex_unlock(&seek_mutex);
 
 }
+#endif
 
 void *task_stop(void *args) {
     auto *player = static_cast<BKPlayer *>(args);
@@ -343,7 +346,8 @@ void BKPlayer::stop_(BKPlayer *derryPlayer) {
 void BKPlayer::stop() {
 
     // 只要用户关闭了，就不准你回调给Java成 start播放
-    helper = nullptr;
+    DELETE(helper)
+    // helper = nullptr;
     if (video_channel) {
         video_channel->jniCallbakcHelper = nullptr;
     }

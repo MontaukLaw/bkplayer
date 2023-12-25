@@ -3,7 +3,7 @@
 
 #include <android/log.h>
 
-#define TAG "Derry"
+#define TAG "BKPlayer"
 
 // ...代表可传递任意内容
 // __VA_ARGS__ 是内部的一个宏，此宏可以把我们要输出打印的内容 给 __android_log_print 来打印

@@ -8,7 +8,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.OnLifecycleEvent
 
-class BKPlayer : SurfaceHolder.Callback, LifecycleObserver {
+@Suppress("DEPRECATION")
+class BKJavaPlayer : SurfaceHolder.Callback, LifecycleObserver {
     val TAG = "BK Player"
     companion object {
         init {
@@ -17,7 +18,7 @@ class BKPlayer : SurfaceHolder.Callback, LifecycleObserver {
     }
 
     private var onPreparedListener: OnPreparedListener? = null // C++层准备情况的接口
-    private var nativeObj: Long? = null // 保存DerryPlayer.cpp对象的地址
+    private var nativePlayerObj: Long? = null // 保存DerryPlayer.cpp对象的地址
     private var onErrorListener: OnErrorListener? = null
     private var surfaceHolder: SurfaceHolder? = null
 
@@ -27,21 +28,22 @@ class BKPlayer : SurfaceHolder.Callback, LifecycleObserver {
         this.dataSource = dataSource
     }
 
-
     /**
      * 播放前的 准备工作 // ActivityThread.java Handler
      */
     @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
-    fun prepare() { // 我们的准备工作：触发
+    fun prepare() {
+        // 当前Activity处于Resumed状态时调用
         Log.d(TAG, "prepare: ")
-        nativeObj = prepareNative(dataSource!!)
+        nativePlayerObj = prepareNative(dataSource!!)
     }
 
     /**
      * 开始播放，需要准备成功后 由MainActivity哪里调用
      */
     fun start() {
-        startNative(nativeObj!!)
+        Log.d(TAG, "Start: ")
+        startNative(nativePlayerObj!!)
     }
 
     /**
@@ -49,7 +51,8 @@ class BKPlayer : SurfaceHolder.Callback, LifecycleObserver {
      */
     @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
     fun stop() {
-        stopNative(nativeObj!!)
+        Log.d(TAG, "Stop: ")
+        stopNative(nativePlayerObj!!)
     }
 
     /**
@@ -57,7 +60,8 @@ class BKPlayer : SurfaceHolder.Callback, LifecycleObserver {
      */
     @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
     fun release() {
-        releaseNative(nativeObj!!)
+        Log.d(TAG, "Release: ")
+        releaseNative(nativePlayerObj!!)
     }
 
     // 写一个函数，给C++调用
@@ -66,25 +70,12 @@ class BKPlayer : SurfaceHolder.Callback, LifecycleObserver {
      */
     fun onPrepared() {
         if (onPreparedListener != null) {
+            Log.d(TAG, "onPrepared: ")
             onPreparedListener!!.onPrepared()
         }
     }
 
-    /**
-     * 获取总时长
-     * @return
-     */
-    val duration: Int get() = getDurationNative(nativeObj!!)
-
-    /**
-     * MainActivity 调用 seek 拖动 ，拖动条控制C++代码
-     */
-    fun seek(playProgress: Int) {
-        seekNative(playProgress, nativeObj!!)
-    }
-
     // 更多更多的 方法，需要给  C++ 调用，所以  有可能是   C++子线程调用   C++主线程调用
-
     /**
      * 准备OK的监听接口
      */
@@ -132,7 +123,6 @@ class BKPlayer : SurfaceHolder.Callback, LifecycleObserver {
     fun setOnErrorListener(onErrorListener: OnErrorListener?) {
         this.onErrorListener = onErrorListener
     }
-
     /**
      * set SurfaceView
      * @param surfaceView
@@ -151,42 +141,15 @@ class BKPlayer : SurfaceHolder.Callback, LifecycleObserver {
 
     // 界面发生了改变
     override fun surfaceChanged(surfaceHolder: SurfaceHolder, format: Int, width: Int, height: Int) {
-        setSurfaceNative(surfaceHolder.surface, nativeObj!!)
+        setSurfaceNative(surfaceHolder.surface, nativePlayerObj!!)
     }
 
     override fun surfaceDestroyed(surfaceHolder: SurfaceHolder) {}
-
-    /**
-     * 给jni反射调用的  准备成功
-     */
-    fun onProgress(progress: Int) {
-        if (onProgressListener != null) {
-            onProgressListener!!.onProgress(progress)
-        }
-    }
-
-    private var onProgressListener: OnProgressListener? = null
-
-    /**
-     * 准备播放时进度的监听接口
-     */
-    interface OnProgressListener {
-        fun onProgress(progress: Int)
-    }
-
-    /**
-     * 设置准备播放时进度的监听接口
-     */
-    fun setOnOnProgressListener(onProgressListener: OnProgressListener?) {
-        this.onProgressListener = onProgressListener
-    }
 
     private external fun prepareNative(dataSource: String): Long
     private external fun startNative(nativeObj: Long)
     private external fun stopNative(nativeObj: Long)
     private external fun releaseNative(nativeObj: Long)
     private external fun setSurfaceNative(surface: Surface, nativeObj: Long)
-    private external fun getDurationNative(nativeObj: Long): Int
-    private external fun seekNative(playValue: Int, nativeObj: Long)
 
 }
