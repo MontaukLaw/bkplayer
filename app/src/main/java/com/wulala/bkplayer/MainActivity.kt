@@ -52,11 +52,8 @@ class MainActivity : AppCompatActivity(), SeekBar.OnSeekBarChangeListener {
         player = BKPlayer()
         lifecycle.addObserver(player!!) // MainActivity被观察者 与 BKPlayer观察者 建立绑定关系
         player?.setSurfaceView(surfaceView!!)
-        player?.setDataSource(
-            File(
-                Environment.getExternalStorageDirectory(), "demo.mp4"
-            ).absolutePath
-        )
+        // player?.setDataSource(File(Environment.getExternalStorageDirectory(), "demo.mp4").absolutePath)
+        player?.setDataSource("rtsp://192.168.1.7:554/stream1")
 
         player!!.setOnErrorListener(object : BKPlayer.OnErrorListener {
 
@@ -70,7 +67,8 @@ class MainActivity : AppCompatActivity(), SeekBar.OnSeekBarChangeListener {
         })
 
         startBtn?.setOnClickListener {
-            player?.start()
+            // player?.start()
+            player?.prepare()
         }
 
         stopBtn?.setOnClickListener {

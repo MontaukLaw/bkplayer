@@ -30,6 +30,7 @@ public:
     void video_play();
     void setRenderCallback(RenderCallback renderCallback);
 
+    void video_play_old();
 };
 
 #endif //DERRYPLAYERKT_VIDEOCHANNEL_H

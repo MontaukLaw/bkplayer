@@ -28,7 +28,8 @@ void dropAVPacket(queue<AVPacket *> &q) {
     }
 }
 
-VideoChannel::VideoChannel(int stream_index, AVCodecContext *codecContext, AVRational time_base, int fps)
+VideoChannel::VideoChannel(int stream_index, AVCodecContext *codecContext,
+                           AVRational time_base, int fps)
         : BaseChannel(stream_index, codecContext, time_base), fps(fps) {
     frames.setSyncCallback(dropAVFrame);
     packets.setSyncCallback(dropAVPacket);
@@ -43,6 +44,7 @@ void VideoChannel::stop() {
     pthread_join(pid_video_play, nullptr);
 
     isPlaying = false;
+
     packets.setWork(0);
     frames.setWork(0);
 
@@ -70,9 +72,9 @@ void VideoChannel::video_decode() {
         }
 
         int ret = packets.getQueueAndDel(pkt); // 阻塞式函数 取出刚刚DerryPlayer中加入的pkt
-        if (!isPlaying) {
-            break; // 如果关闭了播放，跳出循环，releaseAVPacket(&pkt);
-        }
+        // if (!isPlaying) {
+        //     break; // 如果关闭了播放，跳出循环，releaseAVPacket(&pkt);
+        // }
 
         if (!ret) { // ret == 0
             continue; // 哪怕是没有成功，也要继续（假设：你生产太慢(压缩包加入队列)，我消费就等一下你）
@@ -100,9 +102,17 @@ void VideoChannel::video_decode() {
             }
             break; // 出错误了
         }
-        // 终于拿到 原始包了，加入队列-- YUV数据
-        frames.insertToQueue(frame);
-        LOGD("3. 解码一个压缩包，成功加入队列")
+
+        static int counter = 0;
+        counter++;
+        if (counter == 2) {
+            // 终于拿到 原始包了，加入队列-- YUV数据
+            frames.insertToQueue(frame);
+            LOGD("3. 解码一个压缩包，成功加入队列")
+            counter = 0;
+        } else {
+            releaseAVFrame(&frame);
+        }
 
         if (pkt) {
             // 安心释放pkt本身空间释放 和 pkt成员指向的空间释放
@@ -124,6 +134,26 @@ void *task_video_play(void *args) {
     return nullptr;
 }
 
+void VideoChannel::video_play_old() {
+    AVFrame *frame = nullptr;
+    while (isPlaying) {
+
+        int ret = frames.getQueueAndDel(frame);
+        if (!ret) { // ret == 0
+            continue; // 哪怕是没有成功，也要继续（假设：你生产太慢(原始包加入队列)，我消费就等一下你）
+        }
+        if (frame) {
+            av_frame_unref(frame); // 减1 = 0 释放成员指向的堆区
+            releaseAVFrame(&frame); // 释放AVFrame * 本身的堆区空间
+        }
+    }
+    if (frame) {
+        av_frame_unref(frame); // 减1 = 0 释放成员指向的堆区
+        releaseAVFrame(&frame); // 释放AVFrame * 本身的堆区空间
+    }
+    isPlaying = false;
+}
+
 // 2.把队列里面的原始包(AVFrame *)取出来， 播放 【真正干活的就是他】
 void VideoChannel::video_play() { // 第二线线程：视频：从队列取出原始包，播放 【真正干活了】
 
@@ -139,11 +169,12 @@ void VideoChannel::video_play() { // 第二线线程：视频：从队列取出�
     //给 dst_data 申请内存   width * height * 4 xxxx
     int ret = av_image_alloc(dst_data, dst_linesize,
                              codecContext->width, codecContext->height, AV_PIX_FMT_RGBA, 1);
-
     if (ret < 0) {
         LOGE("av_image_alloc failed");
         return;
     }
+
+    LOGD("codecContext w :%d h:%d", codecContext->width, codecContext->height);
 
     // yuv -> rgba
     SwsContext *sws_ctx = sws_getContext(
@@ -159,15 +190,13 @@ void VideoChannel::video_play() { // 第二线线程：视频：从队列取出�
             SWS_BILINEAR, NULL, NULL, NULL);
 
     while (isPlaying) {
-        LOGD("4. 从队列中取出一个YUV原始包，准备播放")
+
         int ret = frames.getQueueAndDel(frame);
-        if (!isPlaying) {
-            break; // 如果关闭了播放，跳出循环，releaseAVPacket(&pkt);
-        }
         if (!ret) { // ret == 0
             continue; // 哪怕是没有成功，也要继续（假设：你生产太慢(原始包加入队列)，我消费就等一下你）
         }
 
+        LOGD("4. 从队列中取出一个YUV原始包，准备播放")
         // 格式转换 yuv ---> rgba
         sws_scale(sws_ctx,
                 // 下面是输入环节 YUV的数据

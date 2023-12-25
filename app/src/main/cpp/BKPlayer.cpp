@@ -239,6 +239,7 @@ void BKPlayer::start_() { // 子线程
     }
     // end while
     isPlaying = false;
+    // 事实上实在这里stop video的playing
     video_channel->stop();
 }
 
@@ -323,7 +324,9 @@ void *task_stop(void *args) {
 }
 
 void BKPlayer::stop_(BKPlayer *derryPlayer) {
-    isPlaying = false;
+
+    this->isPlaying = false;
+
     pthread_join(pid_prepare, nullptr);
     pthread_join(pid_start, nullptr);
 
@@ -355,6 +358,7 @@ void BKPlayer::stop() {
     // 所以我们我们在开启一个 stop_线程 来等你 稳稳的停下来
     // 创建子线程
     pthread_create(&pid_stop, nullptr, task_stop, this);
+
 }
 
 

@@ -1,5 +1,6 @@
 package com.wulala.bkplayer
 
+import android.util.Log
 import android.view.Surface
 import android.view.SurfaceHolder
 import android.view.SurfaceView
@@ -8,7 +9,7 @@ import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.OnLifecycleEvent
 
 class BKPlayer : SurfaceHolder.Callback, LifecycleObserver {
-
+    val TAG = "BK Player"
     companion object {
         init {
             System.loadLibrary("bkplayer")
@@ -17,8 +18,8 @@ class BKPlayer : SurfaceHolder.Callback, LifecycleObserver {
 
     private var onPreparedListener: OnPreparedListener? = null // C++层准备情况的接口
     private var nativeObj: Long? = null // 保存DerryPlayer.cpp对象的地址
-    private var onErrorListener: OnErrorListener? = null // TODO 第二节课新增
-    private var surfaceHolder: SurfaceHolder? = null // TODO 第三节课新增
+    private var onErrorListener: OnErrorListener? = null
+    private var surfaceHolder: SurfaceHolder? = null
 
     // 媒体源（文件路径， 直播地址rtmp）
     private var dataSource: String? = null
@@ -32,6 +33,7 @@ class BKPlayer : SurfaceHolder.Callback, LifecycleObserver {
      */
     @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
     fun prepare() { // 我们的准备工作：触发
+        Log.d(TAG, "prepare: ")
         nativeObj = prepareNative(dataSource!!)
     }
 
@@ -144,7 +146,7 @@ class BKPlayer : SurfaceHolder.Callback, LifecycleObserver {
     }
 
     override fun surfaceCreated(surfaceHolder: SurfaceHolder) {
-        // 我之前开发，就是写这里的饿 setSurfaceNative
+        // setSurfaceNative
     }
 
     // 界面发生了改变
