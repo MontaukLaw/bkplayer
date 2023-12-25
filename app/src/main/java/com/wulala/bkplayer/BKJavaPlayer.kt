@@ -53,6 +53,7 @@ class BKJavaPlayer : SurfaceHolder.Callback, LifecycleObserver {
     fun stop() {
         Log.d(TAG, "Stop: ")
         stopNative(nativePlayerObj!!)
+        nativePlayerObj = null
     }
 
     /**

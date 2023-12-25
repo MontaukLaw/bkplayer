@@ -2,8 +2,8 @@
 #define DERRYPLAYER_BASECHANNEL_H
 
 extern "C" {
-    #include <libavcodec/avcodec.h>
-    #include <libavutil/time.h>
+#include <libavcodec/avcodec.h>
+#include <libavutil/time.h>
 };
 
 #include "safe_queue.h"
@@ -21,8 +21,8 @@ public:
 
     AVRational time_base; // TODO 音视频同步 2.1 （AudioChannel VideoChannel 都需要时间基）单位而已
 
-    // TODO 第七节课增加 2.1
     JNICallbakcHelper *jniCallbakcHelper = 0;
+
     void setJNICallbakcHelper(JNICallbakcHelper *jniCallbakcHelper) {
         this->jniCallbakcHelper = jniCallbakcHelper;
     }
@@ -30,9 +30,9 @@ public:
     BaseChannel(int stream_index, AVCodecContext *codecContext, AVRational time_base)
             :
             stream_index(stream_index),
-            codecContext(codecContext) ,
+            codecContext(codecContext),
             time_base(time_base)  // 注意：这个接收的是 子类传递过来的 时间基
-            {
+    {
         packets.setReleaseCallback(releaseAVPacket); // 给队列设置Callback，Callback释放队列里面的数据
         frames.setReleaseCallback(releaseAVFrame); // 给队列设置Callback，Callback释放队列里面的数据
     }

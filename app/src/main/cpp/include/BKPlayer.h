@@ -28,6 +28,7 @@ private:
     pthread_t pid_stop;
 
 public:
+
     BKPlayer(const char *data_source, JNICallbakcHelper *helper);
     ~BKPlayer();
 

@@ -95,6 +95,7 @@ Java_com_wulala_bkplayer_BKJavaPlayer_stopNative(JNIEnv *env, jobject thiz, jlon
     auto *player = reinterpret_cast<BKPlayer *>(nativeObj);
     if (player) {
         player->stop();
+        player->setRenderCallback(nullptr);
     }
 }
 

@@ -201,8 +201,9 @@ void BKPlayer::start_() { // 子线程
     LOGD("start_");
     while (isPlaying) {
         // 解决方案：视频 我不丢弃数据，等待队列中数据 被消费 内存泄漏点1.1
-        if (video_channel && video_channel->packets.size() > 100) {
+        if (video_channel && video_channel->packets.size() > 10) {
             av_usleep(10 * 1000); // 单位：microseconds 微妙 10毫秒
+            LOGD("video_channel->packets.size() > 10");
             continue;
         }
 
@@ -214,9 +215,7 @@ void BKPlayer::start_() { // 子线程
         int ret = av_read_frame(formatContext, packet);
         if (!ret) { // ret == 0
             // AudioChannel 队列   packages队列（AVPacket * 压缩）    frames队列 （AVFrame * 原始）
-
             // VideoChannel 队列   packages队列（AVPacket * 压缩）    frames队列 （AVFrame * 原始）
-
             // 把我们的 AVPacket* 加入队列， 音频 和 视频
             /*AudioChannel.insert(packet);
             VideioChannel.insert(packet);*/
@@ -260,8 +259,8 @@ void BKPlayer::start() {
     pthread_create(&pid_start, nullptr, task_start, this); // this == DerryPlayer的实例
 }
 
-void BKPlayer::setRenderCallback(RenderCallback renderCallback) {
-    this->renderCallback = renderCallback;
+void BKPlayer::setRenderCallback(RenderCallback renderCallback_) {
+    this->renderCallback = renderCallback_;
 }
 
 

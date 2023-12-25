@@ -3,6 +3,7 @@
 
 #include <queue> // 先进先出 FIFO
 #include <pthread.h>
+#include "log4c.h"
 
 using namespace std;
 
@@ -57,20 +58,28 @@ public:
      */
     int getQueueAndDel(T &value) { // 获取队列数据后，并且 删除 ？ 为了不混乱
         int ret = 0; // 默认是false
-
+        int counter = 0;
         pthread_mutex_lock(&mutex); // 多线程的访问（先锁住）
-
         // 如果是if，只执行一次，执行一次 就不明确
-        while (work && queue.empty()) {
-            // 如果是工作专题 并且 队列里面没有数据，我就阻塞这这里睡觉
-            pthread_cond_wait(&cond, &mutex); // 没有数据就睡觉（C++线程的内容）
-        }
+        //        while (work && queue.empty()) {
+        //            // 如果是工作专题 并且 队列里面没有数据，我就阻塞这这里睡觉
+        //            counter++;
+        //            if (counter > 100) {
+        //               // LOGD("Wait too long");
+        //            }
+        //            LOGD("counter:%d", counter);
+        //            pthread_cond_wait(&cond, &mutex); // 没有数据就睡觉（C++线程的内容）
+        //        }
 
-        if (!queue.empty()) { // 如果队列里面有数据，就进入此if
-            // 取出队列的数据包 给外界，并删除队列数据包
-            value = queue.front();
-            queue.pop(); // 删除队列中的数据
-            ret = 1; // 成功了 Success 放回值  true
+        if (work) {
+            if (queue.empty()) {
+                ret = 0;
+            } else { // 如果队列里面有数据，就进入此if
+                // 取出队列的数据包 给外界，并删除队列数据包
+                value = queue.front();
+                queue.pop(); // 删除队列中的数据
+                ret = 1; // 成功了 Success 放回值  true
+            }
         }
 
         pthread_mutex_unlock(&mutex); // 多线程的访问（要解锁）
@@ -94,18 +103,18 @@ public:
         pthread_mutex_unlock(&mutex); // 多线程的访问（要解锁）
     }
 
-    int empty(){
+    int empty() {
         return queue.empty();
     }
 
-    int size(){
+    int size() {
         return queue.size();
     }
 
     /**
      * 清空队列中所有的数据，循环一个一个的删除
      */
-    void clear(){
+    void clear() {
         pthread_mutex_lock(&mutex); // 多线程的访问（先锁住）
 
         unsigned int size = queue.size();
@@ -113,7 +122,7 @@ public:
         for (int i = 0; i < size; ++i) {
             //循环释放队列中的数据
             T value = queue.front();
-            if(releaseCallback){
+            if (releaseCallback) {
                 releaseCallback(&value); // 让外界去释放堆区空间
             }
             queue.pop(); // 删除队列中的数据，让队列为0
@@ -126,7 +135,7 @@ public:
      * 设置此函数指针的回调，让外界去释放
      * @param releaseCallback
      */
-    void setReleaseCallback(ReleaseCallback releaseCallback){
+    void setReleaseCallback(ReleaseCallback releaseCallback) {
         this->releaseCallback = releaseCallback;
     }
 
@@ -134,18 +143,18 @@ public:
     * 设置此函数指针的回调，让外界去丢包
     * @param syncCallback
     */
-    void setSyncCallback(SyncCallback syncCallback){
+    void setSyncCallback(SyncCallback syncCallback) {
         this->syncCallback = syncCallback;
     }
 
     /**
      * 同步操作 丢包
      */
-     void sync() {
+    void sync() {
         pthread_mutex_lock(&mutex);
         syncCallback(queue); // 函数指针，具体丢包动作，让外界完成
         pthread_mutex_unlock(&mutex);
-     }
+    }
 };
 
 #endif //DERRYPLAYER_SAFE_QUEUE_H
